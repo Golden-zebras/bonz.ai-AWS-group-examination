@@ -1,4 +1,4 @@
-const { db } = require("../../services/dynamodb"); // Anslutning till DynamoDB
+/* const { db } = require("../../services/dynamodb"); // Anslutning till DynamoDB
 const { sendResponse } = require("../Responses/index"); // Anpassad funktion för att skicka svar
 const { nanoid } = require("nanoid"); // nanoid används för att skapa unika ID:n
 
@@ -31,3 +31,4 @@ const seedRooms = async (event, context) => {
 };
 
 exports.handler = seedRooms;
+ */
