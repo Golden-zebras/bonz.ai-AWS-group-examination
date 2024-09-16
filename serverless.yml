@@ -60,20 +60,20 @@ resources:
       Properties:
         TableName: hotel-bookings
         AttributeDefinitions:
-          - AttributeName: "bookingId"
-            AttributeType: "S"
-          - AttributeName: "checkInDate"
-            AttributeType: "S"
+          - AttributeName: 'bookingId'
+            AttributeType: 'S'
+          - AttributeName: 'checkInDate'
+            AttributeType: 'S'
         KeySchema:
-          - AttributeName: "bookingId"
+          - AttributeName: 'bookingId'
             KeyType: HASH
-          - AttributeName: "checkInDate"
+          - AttributeName: 'checkInDate'
             KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
         GlobalSecondaryIndexes:
           - IndexName: CheckInDateIndex
             KeySchema:
-              - AttributeName: "checkInDate"
+              - AttributeName: 'checkInDate'
                 KeyType: HASH
             Projection:
-              ProjectionType: "ALL"
+              ProjectionType: 'ALL'
