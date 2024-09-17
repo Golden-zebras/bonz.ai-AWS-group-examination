@@ -7,6 +7,8 @@ exports.handler = async (event) => {
     return sendError(400, "Missing request body");
   }
 
+  
+
   try {
     const bookingData = JSON.parse(event.body);
     const {

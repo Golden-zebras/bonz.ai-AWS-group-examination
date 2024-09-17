@@ -1,6 +1,6 @@
-function sendResponse(data) {
+function sendResponse(statusCode, data) {
   return {
-    statusCode: 200,
+    statusCode: statusCode,
     headers: {
       "Content-Type": "application/json",
     },
