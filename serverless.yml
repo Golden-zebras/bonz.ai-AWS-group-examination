@@ -1,5 +1,6 @@
 org:
 service: hotel-booking-api
+
 provider:
   name: aws
   runtime: nodejs20.x
@@ -21,6 +22,12 @@ functions:
       - httpApi:
           path: /seed/rooms
           method: post
+  GetBooking:
+    handler: functions/GetBooking/index.handler
+    events:
+      - httpApi:
+          path: /bookings/{id}
+          method: get
   GetAllBooking:
     handler: functions/GetAllBooking/index.handler
     events:
@@ -39,12 +46,12 @@ functions:
       - httpApi:
           path: /bookings/{id}
           method: put
-  CancelBooking:
-    handler: functions/CancelBooking/index.handler
+  GetAvailableRooms:
+    handler: functions/GetAvailableRooms/index.handler
     events:
       - httpApi:
-          path: /bookings/{id}
-          method: delete
+          path: /rooms/available
+          method: get
 
 resources:
   Resources:
@@ -53,20 +60,20 @@ resources:
       Properties:
         TableName: hotel-bookings
         AttributeDefinitions:
-          - AttributeName: "bookingId"
-            AttributeType: "S"
-          - AttributeName: "checkInDate"
-            AttributeType: "S"
+          - AttributeName: 'bookingId'
+            AttributeType: 'S'
+          - AttributeName: 'checkInDate'
+            AttributeType: 'S'
         KeySchema:
-          - AttributeName: "bookingId"
+          - AttributeName: 'bookingId'
             KeyType: HASH
-          - AttributeName: "checkInDate"
+          - AttributeName: 'checkInDate'
             KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
         GlobalSecondaryIndexes:
           - IndexName: CheckInDateIndex
             KeySchema:
-              - AttributeName: "checkInDate"
+              - AttributeName: 'checkInDate'
                 KeyType: HASH
             Projection:
-              ProjectionType: "ALL"
+              ProjectionType: 'ALL'
