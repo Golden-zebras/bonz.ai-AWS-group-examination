@@ -26,7 +26,7 @@ module.exports.handler = async (event) => {
       };
     });
 
-    return sendResponse(rooms);
+    return sendResponse(200, rooms);
   } catch (error) {
     return sendError(500, 'error fetching data');
   }

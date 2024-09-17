@@ -1,11 +1,11 @@
-org:
+org: emanuelejs23
 service: hotel-booking-api
 provider:
   name: aws
   runtime: nodejs20.x
   region: eu-north-1
   iam:
-    role:
+    role: arn:aws:iam::575108945643:role/serverless
 
 build:
   esbuild:
