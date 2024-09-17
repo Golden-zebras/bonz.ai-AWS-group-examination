@@ -33,8 +33,8 @@ exports.handler = async (event) => {
     const bookingId = nanoid(10);
     const booking = {
       bookingId,
-      checkInDate: new Date(checkInDate).toISOString(),
-      checkOutDate: new Date(checkOutDate).toISOString(),
+      checkInDate: checkInDate,
+      checkOutDate: checkOutDate,
       numberOfGuests,
       roomTypes,
       guestName,
