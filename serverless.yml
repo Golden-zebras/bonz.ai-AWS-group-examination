@@ -52,6 +52,12 @@ functions:
       - httpApi:
           path: /rooms/available
           method: get
+  CancelBooking:
+    handler: functions/CancelBooking/index.handler
+    events:
+      - httpApi:
+          path: /bookings/{id}
+          method: delete
 
 resources:
   Resources:
