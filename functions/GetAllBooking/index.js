@@ -1,17 +1,17 @@
-const { db } = require('../../services/dynamodb');
-const { sendResponse, sendError } = require('../Responses/index');
+const { db } = require("../../services/dynamodb");
+const { sendResponse, sendError } = require("../Responses/index");
 
 module.exports.handler = async (event) => {
   try {
     const result = await db.scan({
-      TableName: 'hotel-bookings',
+      TableName: "hotel-bookings",
     });
 
     const bookedRooms = result.Items.filter(
       (item) =>
         item.isAvailable === false ||
         item.isAvailable === null ||
-        item.isAvailable === '' ||
+        item.isAvailable === "" ||
         item.isAvailable === undefined
     );
 
@@ -28,6 +28,6 @@ module.exports.handler = async (event) => {
 
     return sendResponse(200, rooms);
   } catch (error) {
-    return sendError(500, 'error fetching data');
+    return sendError(500, "error fetching data");
   }
 };
