@@ -26,7 +26,7 @@ exports.handler = async (event) => {
 
         const cancelledBooking = await db.delete(params);
         
-        return sendResponse(cancelledBooking)
+        return sendResponse(200, cancelledBooking)
     } catch (error) {
         console.error("Error cancelling booking: ", error);
         return sendError(500, "Could not cancel booking")
