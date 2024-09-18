@@ -1,22 +1,22 @@
-const { db } = require('../../services/dynamodb');
-const { sendResponse, sendError } = require('../Responses/index');
+const { db } = require("../../services/dynamodb");
+const { sendResponse, sendError } = require("../Responses/index");
 
 module.exports.handler = async () => {
   try {
     const result = await db.scan({
-      TableName: 'hotel-bookings',
+      TableName: "hotel-bookings",
     });
 
     const bookedRooms = result.Items.filter(
       (item) =>
         item.isAvailable === false ||
         item.isAvailable === null ||
-        item.isAvailable === '' ||
+        item.isAvailable === "" ||
         item.isAvailable === undefined
     );
 
     if (bookedRooms.length === 0) {
-      return sendResponse(200, { message: 'No booked rooms' });
+      return sendResponse(200, { message: "No booked rooms" });
     }
 
     const rooms = bookedRooms.map((item) => {
@@ -32,6 +32,6 @@ module.exports.handler = async () => {
 
     return sendResponse(200, rooms);
   } catch (error) {
-    return sendError(500, 'error fetching data');
+    return sendError(500, "error fetching data");
   }
 };
