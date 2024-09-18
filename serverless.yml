@@ -1,4 +1,4 @@
-org:
+org: 
 service: hotel-booking-api
 
 provider:
@@ -6,7 +6,7 @@ provider:
   runtime: nodejs20.x
   region: eu-north-1
   iam:
-    role:
+    role: 
 
 build:
   esbuild:
@@ -22,12 +22,6 @@ functions:
       - httpApi:
           path: /seed/rooms
           method: post
-  GetBooking:
-    handler: functions/GetBooking/index.handler
-    events:
-      - httpApi:
-          path: /bookings/{id}
-          method: get
   GetAllBooking:
     handler: functions/GetAllBooking/index.handler
     events:
@@ -46,13 +40,7 @@ functions:
       - httpApi:
           path: /bookings/{id}
           method: put
-  GetAvailableRooms:
-    handler: functions/GetAvailableRooms/index.handler
-    events:
-      - httpApi:
-          path: /rooms/available
-          method: get
-
+ 
 resources:
   Resources:
     HotelBookingTable:
