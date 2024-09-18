@@ -1,5 +1,5 @@
 
-org: 
+org: emanuelejs23
 service: hotel-booking-api
 
 provider:
@@ -8,7 +8,7 @@ provider:
   region: eu-north-1
   iam:
 
-    role:
+    role: arn:aws:iam::575108945643:role/serverless
 
 build:
   esbuild:
