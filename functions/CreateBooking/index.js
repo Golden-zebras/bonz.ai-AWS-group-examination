@@ -4,6 +4,9 @@ const { nanoid } = require("nanoid");
 const {
   calculatePricePerNight,
 } = require("../../helpers/calculatePricePerNight");
+const {
+  validateBookingRequest,
+} = require("../../helpers/validateBookingRequest");
 
 exports.handler = async (event) => {
   if (!event.body) {
@@ -12,6 +15,11 @@ exports.handler = async (event) => {
 
   try {
     const bookingData = JSON.parse(event.body);
+    const validationResult = validateBookingRequest(bookingData);
+    if (!validationResult.valid) {
+      return sendError(400, validationResult.message);
+    }
+
     const {
       numberOfGuests,
       roomTypes,
@@ -20,17 +28,6 @@ exports.handler = async (event) => {
       guestName,
       guestEmail,
     } = bookingData;
-
-    if (
-      !numberOfGuests ||
-      !roomTypes ||
-      !checkInDate ||
-      !checkOutDate ||
-      !guestName ||
-      !guestEmail
-    ) {
-      return sendError(400, "Missing required fields");
-    }
 
     const bookingId = nanoid(10);
     const checkIn = new Date(checkInDate);
@@ -61,7 +58,10 @@ exports.handler = async (event) => {
       Item: booking,
     });
 
-    return sendResponse(200, booking);
+    return sendResponse(200, {
+      message: "Booking created successfully",
+      booking,
+    });
   } catch (error) {
     console.error("Error creating booking:", error);
     return sendError(500, "Could not create booking");
