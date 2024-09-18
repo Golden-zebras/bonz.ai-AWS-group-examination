@@ -3,6 +3,7 @@ const { sendResponse, sendError } = require("../Responses");
 const { validateUpdateBookingRequest } = require("../../helpers/validateUpdateBookingRequest");
 const { getAvailableRooms } = require("../../helpers/roomCapacity");
 const { assignBookingToRoom } = require("../../helpers/assignBookingToRoom");
+const { restoreRoomStatus } = require("../../helpers/restoreRoomStatus");
 const { calculatePricePerNight } = require("../../helpers/calculatePricePerNight");
 
 exports.handler = async (event) => {
@@ -24,7 +25,6 @@ exports.handler = async (event) => {
       return sendError(400, validation.message);
     }
 
-   
     const scanParams = {
       TableName: "hotel-bookings",
       FilterExpression: "bookingId = :bookingId",
@@ -39,13 +39,18 @@ exports.handler = async (event) => {
     }
 
     const existingBooking = scanResult.Items[0];
-    const originalCheckInDate = existingBooking.checkInDate;
-    
-   
+    const originalRoomId = existingBooking.roomNumber;
+    const originalRoomType = existingBooking.roomTypes[0];
+
     const checkIn = new Date(checkInDate);
     const checkOut = new Date(checkOutDate);
     const numberOfNights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
 
+    try {
+      await restoreRoomStatus(originalRoomId, originalRoomType);
+    } catch (error) {
+      return sendError(500, "Could not restore the original room status");
+    }
 
     let availableRooms;
     try {
@@ -55,12 +60,11 @@ exports.handler = async (event) => {
     }
 
     const firstAvailableRoom = availableRooms[0];
+    
     await assignBookingToRoom(firstAvailableRoom, bookingId, existingBooking.guestName); 
 
-   
     const totalPrice = calculatePricePerNight(firstAvailableRoom.roomType, numberOfNights);
 
-    
     const newBookingParams = {
       TableName: "hotel-bookings",
       Item: {
@@ -71,8 +75,8 @@ exports.handler = async (event) => {
         roomTypes: roomTypes,
         guestName: existingBooking.guestName,
         email: existingBooking.guestEmail,
-        roomNumber: firstAvailableRoom.roomId, // Aggiunta del numero della stanza
-        totalPrice: totalPrice // Aggiunta del prezzo totale
+        roomNumber: firstAvailableRoom.roomId, 
+        totalPrice: totalPrice 
       },
     };
 
