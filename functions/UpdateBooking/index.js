@@ -1,5 +1,6 @@
 const { db } = require("../../services/dynamodb");
 const { sendResponse, sendError } = require("../Responses");
+const { validateUpdateBookingRequest } = require("../../helpers/validateUpdateBookingRequest")
 
 exports.handler = async (event) => {
   if (!event.pathParameters || !event.pathParameters.id) {
@@ -15,10 +16,10 @@ exports.handler = async (event) => {
     const bookingData = JSON.parse(event.body);
     const { numberOfGuests, roomTypes, checkInDate, checkOutDate } = bookingData;
 
-    if (!numberOfGuests || !roomTypes || !checkInDate || !checkOutDate) {
-      return sendError(400, "Missing required fields");
+    const validation = validateUpdateBookingRequest(bookingData);
+    if (!validation.valid) {
+      return sendError(400, validation.message);
     }
-
     const scanParams = {
       TableName: "hotel-bookings",
       FilterExpression: "bookingId = :bookingId",
