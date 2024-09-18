@@ -8,6 +8,8 @@ const {
   validateBookingRequest,
 } = require("../../helpers/validateBookingRequest");
 const { checkRoomAvailability } = require("../../helpers/roomAvailability");
+const { checkCapacity} = require("../../helpers/roomCapacity")
+
 
 exports.handler = async (event) => {
   if (!event.body) {
@@ -38,36 +40,37 @@ exports.handler = async (event) => {
 
     let availableRooms = [];
 
-    // Check availability for each room type in the booking request
     for (const roomType of roomTypes) {
-      const availableRoom = await checkRoomAvailability(
-        roomType,
-        numberOfGuests
-      );
-
+      const availableRoom = await checkRoomAvailability(roomType, numberOfGuests);
       if (!availableRoom) {
         return sendError(
           400,
           `No available ${roomType} rooms for ${numberOfGuests} guests`
         );
       }
-      availableRooms.push(availableRoom); // Collect available room details
+      availableRooms.push(...availableRoom);
     }
 
     console.log(availableRooms);
 
+    const matchedRooms = checkCapacity(availableRooms, numberOfGuests);
+
+    if (matchedRooms.length === 0) {
+      return sendError(400, "No rooms available that match the capacity");
+    }
+
+    const firstAvailableRoom = matchedRooms[0];
+    console.log("First available room:", firstAvailableRoom);
+
     const bookingId = nanoid(10);
 
-    // Calculate total price based on room type and number of nights
     let totalPrice = 0;
-    for (const roomType of roomTypes) {
-      totalPrice += calculatePricePerNight(roomType, numberOfNights);
-    }
+    totalPrice += calculatePricePerNight(firstAvailableRoom.roomType, numberOfNights);
 
     const booking = {
       bookingId,
-      checkInDate: checkInDate,
-      checkOutDate: checkOutDate,
+      checkInDate,
+      checkOutDate,
       numberOfGuests,
       roomTypes,
       guestName,
@@ -76,12 +79,10 @@ exports.handler = async (event) => {
       createdAt: new Date().toISOString(),
     };
 
-    // Save the booking to the DynamoDB table
     await db.put({
       TableName: "hotel-bookings",
       Item: booking,
     });
-    // .promise();
 
     return sendResponse(200, {
       message: "Booking created successfully",
