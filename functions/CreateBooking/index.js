@@ -62,7 +62,7 @@ exports.handler = async (event) => {
         createdAt: new Date().toISOString(),
       };
 
-      await assignBookingToRoom(firstAvailableRoom, bookingId);
+      await assignBookingToRoom(firstAvailableRoom, bookingId, guestName)
 
       await db.put({
         TableName: "hotel-bookings",
