@@ -1,4 +1,5 @@
-org: danielbudai
+
+org: 
 service: hotel-booking-api
 
 provider:
@@ -6,7 +7,8 @@ provider:
   runtime: nodejs20.x
   region: eu-north-1
   iam:
-    role: arn:aws:iam::195275633434:role/serverless
+
+    role:
 
 build:
   esbuild:
@@ -48,36 +50,36 @@ resources:
       Properties:
         TableName: hotel-bookings
         AttributeDefinitions:
-          - AttributeName: "bookingId"
-            AttributeType: "S"
-          - AttributeName: "checkInDate"
-            AttributeType: "S"
+          - AttributeName: 'bookingId'
+            AttributeType: 'S'
+          - AttributeName: 'checkInDate'
+            AttributeType: 'S'
         KeySchema:
-          - AttributeName: "bookingId"
+          - AttributeName: 'bookingId'
             KeyType: HASH
-          - AttributeName: "checkInDate"
+          - AttributeName: 'checkInDate'
             KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
         GlobalSecondaryIndexes:
           - IndexName: CheckInDateIndex
             KeySchema:
-              - AttributeName: "checkInDate"
+              - AttributeName: 'checkInDate'
                 KeyType: HASH
             Projection:
-              ProjectionType: "ALL"
+              ProjectionType: 'ALL'
 
     HotelRoomsTable:
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: hotel-rooms
         AttributeDefinitions:
-          - AttributeName: "roomId"
-            AttributeType: "S"
-          - AttributeName: "roomType"
-            AttributeType: "S"
+          - AttributeName: 'roomId'
+            AttributeType: 'S'
+          - AttributeName: 'roomType'
+            AttributeType: 'S'
         KeySchema:
-          - AttributeName: "roomId"
+          - AttributeName: 'roomId'
             KeyType: HASH
-          - AttributeName: "roomType"
+          - AttributeName: 'roomType'
             KeyType: RANGE
         BillingMode: PAY_PER_REQUEST

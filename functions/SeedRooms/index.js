@@ -1,26 +1,26 @@
-const { db } = require("../../services/dynamodb");
-const { sendResponse } = require("../Responses/index");
+const { db } = require('../../services/dynamodb');
+const { sendResponse } = require('../Responses/index');
 // const { nanoid } = require("nanoid");
 
 const seedRooms = async (event, context) => {
   const rooms = [
     // Sviter
     {
-      type: "suite",
+      type: 'suite',
       capacity: 3,
       price: 1500,
       isAvailable: true,
       roomNumber: 301,
     },
     {
-      type: "suite",
+      type: 'suite',
       capacity: 3,
       price: 1500,
       isAvailable: true,
       roomNumber: 302,
     },
     {
-      type: "suite",
+      type: 'suite',
       capacity: 3,
       price: 1500,
       isAvailable: true,
@@ -29,63 +29,63 @@ const seedRooms = async (event, context) => {
 
     // Enkelrum
     {
-      type: "single",
+      type: 'single',
       capacity: 1,
       price: 500,
       isAvailable: true,
       roomNumber: 101,
     },
     {
-      type: "single",
+      type: 'single',
       capacity: 1,
       price: 500,
       isAvailable: true,
       roomNumber: 102,
     },
     {
-      type: "single",
+      type: 'single',
       capacity: 1,
       price: 500,
       isAvailable: true,
       roomNumber: 103,
     },
     {
-      type: "single",
+      type: 'single',
       capacity: 1,
       price: 500,
       isAvailable: true,
       roomNumber: 104,
     },
     {
-      type: "single",
+      type: 'single',
       capacity: 1,
       price: 500,
       isAvailable: true,
       roomNumber: 105,
     },
     {
-      type: "single",
+      type: 'single',
       capacity: 1,
       price: 500,
       isAvailable: true,
       roomNumber: 106,
     },
     {
-      type: "single",
+      type: 'single',
       capacity: 1,
       price: 500,
       isAvailable: true,
       roomNumber: 107,
     },
     {
-      type: "single",
+      type: 'single',
       capacity: 1,
       price: 500,
       isAvailable: true,
       roomNumber: 108,
     },
     {
-      type: "single",
+      type: 'single',
       capacity: 1,
       price: 500,
       isAvailable: true,
@@ -94,56 +94,56 @@ const seedRooms = async (event, context) => {
 
     // Dubbelrum
     {
-      type: "double",
+      type: 'double',
       capacity: 2,
       price: 1000,
       isAvailable: true,
       roomNumber: 201,
     },
     {
-      type: "double",
+      type: 'double',
       capacity: 2,
       price: 1000,
       isAvailable: true,
       roomNumber: 202,
     },
     {
-      type: "double",
+      type: 'double',
       capacity: 2,
       price: 1000,
       isAvailable: true,
       roomNumber: 203,
     },
     {
-      type: "double",
+      type: 'double',
       capacity: 2,
       price: 1000,
       isAvailable: true,
       roomNumber: 204,
     },
     {
-      type: "double",
+      type: 'double',
       capacity: 2,
       price: 1000,
       isAvailable: true,
       roomNumber: 205,
     },
     {
-      type: "double",
+      type: 'double',
       capacity: 2,
       price: 1000,
       isAvailable: true,
       roomNumber: 206,
     },
     {
-      type: "double",
+      type: 'double',
       capacity: 2,
       price: 1000,
       isAvailable: true,
       roomNumber: 207,
     },
     {
-      type: "double",
+      type: 'double',
       capacity: 2,
       price: 1000,
       isAvailable: true,
@@ -155,7 +155,7 @@ const seedRooms = async (event, context) => {
     rooms.map(async (room) => {
       // room.id = nanoid(10);
       await db.put({
-        TableName: "hotel-rooms",
+        TableName: 'hotel-rooms',
         Item: {
           roomId: room.roomNumber.toString(),
           roomType: room.type,
