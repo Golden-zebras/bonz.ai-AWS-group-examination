@@ -7,9 +7,7 @@ const {
 const {
   validateBookingRequest,
 } = require("../../helpers/validateBookingRequest");
-const { checkRoomAvailability } = require("../../helpers/roomAvailability");
-const { checkCapacity} = require("../../helpers/roomCapacity")
-
+const { getAvailableRooms } = require("../../helpers/roomCapacity");
 
 exports.handler = async (event) => {
   if (!event.body) {
@@ -38,56 +36,42 @@ exports.handler = async (event) => {
       (checkOut - checkIn) / (1000 * 60 * 60 * 24)
     );
 
-    let availableRooms = [];
+    try {
+      const matchedRooms = await getAvailableRooms(roomTypes, numberOfGuests);
+      const firstAvailableRoom = matchedRooms[0];
+      console.log("First available room:", firstAvailableRoom);
 
-    for (const roomType of roomTypes) {
-      const availableRoom = await checkRoomAvailability(roomType, numberOfGuests);
-      if (!availableRoom) {
-        return sendError(
-          400,
-          `No available ${roomType} rooms for ${numberOfGuests} guests`
-        );
-      }
-      availableRooms.push(...availableRoom);
+      const bookingId = nanoid(10);
+
+      let totalPrice = calculatePricePerNight(
+        firstAvailableRoom.roomType,
+        numberOfNights
+      );
+
+      const booking = {
+        bookingId,
+        checkInDate,
+        checkOutDate,
+        numberOfGuests,
+        roomTypes,
+        guestName,
+        guestEmail,
+        totalPrice,
+        createdAt: new Date().toISOString(),
+      };
+
+      await db.put({
+        TableName: "hotel-bookings",
+        Item: booking,
+      });
+
+      return sendResponse(200, {
+        message: "Booking created successfully",
+        booking,
+      });
+    } catch (error) {
+      return sendError(400, error.message);
     }
-
-    console.log(availableRooms);
-
-    const matchedRooms = checkCapacity(availableRooms, numberOfGuests);
-
-    if (matchedRooms.length === 0) {
-      return sendError(400, "No rooms available that match the capacity");
-    }
-
-    const firstAvailableRoom = matchedRooms[0];
-    console.log("First available room:", firstAvailableRoom);
-
-    const bookingId = nanoid(10);
-
-    let totalPrice = 0;
-    totalPrice += calculatePricePerNight(firstAvailableRoom.roomType, numberOfNights);
-
-    const booking = {
-      bookingId,
-      checkInDate,
-      checkOutDate,
-      numberOfGuests,
-      roomTypes,
-      guestName,
-      guestEmail,
-      totalPrice,
-      createdAt: new Date().toISOString(),
-    };
-
-    await db.put({
-      TableName: "hotel-bookings",
-      Item: booking,
-    });
-
-    return sendResponse(200, {
-      message: "Booking created successfully",
-      booking,
-    });
   } catch (error) {
     console.error("Error creating booking:", error);
     return sendError(500, "Could not create booking");

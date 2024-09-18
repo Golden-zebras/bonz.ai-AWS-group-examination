@@ -1,5 +1,6 @@
 function validateBookingRequest(bookingData) {
-  const { guestName, guestEmail, checkInDate, checkOutDate } = bookingData;
+  const { guestName, guestEmail, checkInDate, checkOutDate, numberOfGuests } =
+    bookingData;
 
   if (!guestName || typeof guestName !== "string" || guestName.trim() === "") {
     return {
@@ -42,6 +43,17 @@ function validateBookingRequest(bookingData) {
     return {
       valid: false,
       message: "Check-out date must be after check-in date",
+    };
+  }
+
+  if (
+    !numberOfGuests ||
+    typeof numberOfGuests !== "number" ||
+    numberOfGuests < 1
+  ) {
+    return {
+      valid: false,
+      message: "Number of guests must be at least 1",
     };
   }
 
