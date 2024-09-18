@@ -8,6 +8,7 @@ const {
   validateBookingRequest,
 } = require("../../helpers/validateBookingRequest");
 const { getAvailableRooms } = require("../../helpers/roomCapacity");
+const { assignBookingToRoom } = require("../../helpers/assignBookingToRoom");
 
 exports.handler = async (event) => {
   if (!event.body) {
@@ -57,8 +58,11 @@ exports.handler = async (event) => {
         guestName,
         guestEmail,
         totalPrice,
+        roomNumber: firstAvailableRoom.roomId,
         createdAt: new Date().toISOString(),
       };
+
+      await assignBookingToRoom(firstAvailableRoom, bookingId, guestName)
 
       await db.put({
         TableName: "hotel-bookings",
