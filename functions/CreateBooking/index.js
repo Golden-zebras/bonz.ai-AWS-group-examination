@@ -37,18 +37,28 @@ exports.handler = async (event) => {
       let totalPrice = 0;
       const assignedRooms = [];
 
+      
+      const availableRooms = await getAvailableRooms(roomRequests, numberOfGuests);
+
+      console.log("Available rooms:", availableRooms);
+
+    
+      const bookingId = nanoid(10);
+
+   
       for (const roomRequest of roomRequests) {
         const { roomType, quantity } = roomRequest;
-        const availableRooms = await getAvailableRooms([roomType], quantity);
 
-        if (availableRooms.length < quantity) {
-          return sendError(400, `Not enough available rooms of type ${roomType}`);
-        }
+   
+        const roomsOfType = availableRooms.filter(room => room.roomType === roomType);
 
         for (let i = 0; i < quantity; i++) {
-          const room = availableRooms[i];
-          const bookingId = nanoid(10);
-          await assignBookingToRoom(room, bookingId, guestName);
+          const room = roomsOfType[i];
+          if (!room) break; 
+
+          console.log(`Assigning room ${room.roomId} to guest ${guestName}`);
+
+          await assignBookingToRoom(room, bookingId, guestName); 
           assignedRooms.push({
             roomNumber: room.roomId,
             roomType: room.roomType,
@@ -57,7 +67,6 @@ exports.handler = async (event) => {
         }
       }
 
-      const bookingId = nanoid(10);
       const booking = {
         bookingId,
         checkInDate: checkIn.toISOString().split("T")[0],
@@ -88,3 +97,4 @@ exports.handler = async (event) => {
     return sendError(500, "Could not create booking");
   }
 };
+
