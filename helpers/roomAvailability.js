@@ -1,6 +1,6 @@
 const { db } = require("../services/dynamodb");
 
-const checkRoomAvailability = async (roomType) => {
+const checkRoomAvailability = async (roomType, requestedQuantity) => {
   const result = await db.scan({
     TableName: "hotel-rooms",
     FilterExpression: "roomType = :roomType AND isAvailable = :isAvailable",
@@ -9,13 +9,16 @@ const checkRoomAvailability = async (roomType) => {
       ":isAvailable": true,
     },
   });
-  // .promise();
-
-  if (result.Items.length === 0) {
-    throw new Error(`No available ${roomType} rooms`);
+  
+  const availableRooms = result.Items;
+  if (availableRooms.length < requestedQuantity) {
+    throw new Error(
+      `Not enough available ${roomType} rooms. Requested: ${requestedQuantity}, Available: ${availableRooms.length}`
+    );
   }
 
-  return result.Items;
+  // Return only the requested number of rooms
+  return availableRooms.slice(0, requestedQuantity);
 };
 
 module.exports = { checkRoomAvailability };

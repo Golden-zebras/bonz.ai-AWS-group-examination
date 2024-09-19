@@ -1,12 +1,8 @@
 const { db } = require("../../services/dynamodb");
 const { sendResponse, sendError } = require("../Responses");
 const { nanoid } = require("nanoid");
-const {
-  calculatePricePerNight,
-} = require("../../helpers/calculatePricePerNight");
-const {
-  validateBookingRequest,
-} = require("../../helpers/validateBookingRequest");
+const { calculatePricePerNight } = require("../../helpers/calculatePricePerNight");
+const { validateBookingRequest } = require("../../helpers/validateBookingRequest");
 const { getAvailableRooms } = require("../../helpers/roomCapacity");
 const { assignBookingToRoom } = require("../../helpers/assignBookingToRoom");
 
@@ -24,7 +20,7 @@ exports.handler = async (event) => {
 
     const {
       numberOfGuests,
-      roomTypes,
+      roomRequests,
       checkInDate,
       checkOutDate,
       guestName,
@@ -38,31 +34,51 @@ exports.handler = async (event) => {
     );
 
     try {
-      const matchedRooms = await getAvailableRooms(roomTypes, numberOfGuests);
-      const firstAvailableRoom = matchedRooms[0];
-      console.log("First available room:", firstAvailableRoom);
+      let totalPrice = 0;
+      const assignedRooms = [];
 
+      
+      const availableRooms = await getAvailableRooms(roomRequests, numberOfGuests);
+
+      console.log("Available rooms:", availableRooms);
+
+    
       const bookingId = nanoid(10);
 
-      let totalPrice = calculatePricePerNight(
-        firstAvailableRoom.roomType,
-        numberOfNights
-      );
+   
+      for (const roomRequest of roomRequests) {
+        const { roomType, quantity } = roomRequest;
+
+   
+        const roomsOfType = availableRooms.filter(room => room.roomType === roomType);
+
+        for (let i = 0; i < quantity; i++) {
+          const room = roomsOfType[i];
+          if (!room) break; 
+
+          console.log(`Assigning room ${room.roomId} to guest ${guestName}`);
+
+          await assignBookingToRoom(room, bookingId, guestName); 
+          assignedRooms.push({
+            roomNumber: room.roomId,
+            roomType: room.roomType,
+          });
+          totalPrice += calculatePricePerNight(room.roomType, numberOfNights);
+        }
+      }
 
       const booking = {
         bookingId,
         checkInDate: checkIn.toISOString().split("T")[0],
         checkOutDate: checkOut.toISOString().split("T")[0],
         numberOfGuests,
-        roomTypes,
+        roomRequests,
         guestName,
         guestEmail,
         totalPrice,
-        roomNumber: firstAvailableRoom.roomId,
+        assignedRooms,
         createdAt: new Date().toISOString(),
       };
-
-      await assignBookingToRoom(firstAvailableRoom, bookingId, guestName);
 
       await db.put({
         TableName: "hotel-bookings",
@@ -81,3 +97,4 @@ exports.handler = async (event) => {
     return sendError(500, "Could not create booking");
   }
 };
+
