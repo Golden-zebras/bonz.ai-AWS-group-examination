@@ -1,18 +1,17 @@
 const { db } = require("../../services/dynamodb");
 const { sendResponse, sendError } = require("../Responses/index");
+const { restoreRoomStatus } = require("../../helpers/restoreRoomStatus");
 
 exports.handler = async (event) => {
   try {
-    const bookingId = event.pathParameters.id;
-    const checkInDate = event.queryStringParameters.checkInDate;
+    if (!event.body) {
+      return sendError(400, "Missing request body");
+    }
 
-    const checkIn = new Date(checkInDate);
-    const today = new Date();
+    const { bookingId, checkInDate } = JSON.parse(event.body);
 
-    const timeDiff = Math.ceil((checkIn - today) / (1000 * 60 * 60 * 24));
-
-    if (timeDiff <= 2) {
-      return sendError(400, "Booking can no longer be cancelled");
+    if (!bookingId || !checkInDate) {
+      return sendError(400, "Missing bookingId or checkInDate");
     }
 
     const params = {
@@ -23,9 +22,34 @@ exports.handler = async (event) => {
       },
     };
 
-    const cancelledBooking = await db.delete(params);
+    const result = await db.get(params);
 
-    return sendResponse(200, cancelledBooking);
+    if (!result.Item) {
+      return sendError(404, "Booking not found");
+    }
+
+    const booking = result.Item;
+    const checkIn = new Date(checkInDate);
+    const cancellationDeadline = new Date(
+      checkIn.getTime() - 2 * 24 * 60 * 60 * 1000
+    );
+    const today =
+      event.body && JSON.parse(event.body).currentDate
+        ? new Date(JSON.parse(event.body).currentDate)
+        : new Date();
+
+    if (today >= cancellationDeadline) {
+      return sendError(
+        400,
+        "Booking can no longer be cancelled (less than 2 days before check-in)"
+      );
+    }
+
+    await db.delete(params);
+
+    await restoreRoomStatus(booking.roomNumber, booking.roomTypes[0]);
+
+    return sendResponse(200, { message: "Booking cancelled successfully" });
   } catch (error) {
     console.error("Error cancelling booking: ", error);
     return sendError(500, "Could not cancel booking");
