@@ -45,9 +45,15 @@ exports.handler = async (event) => {
       );
     }
 
-    await db.delete(params);
+    for (const room of booking.assignedRooms) {
+      try {
+        await restoreRoomStatus(room.roomNumber, room.roomType);
+      } catch (restoreError) {
+        console.error("Error restoring room status:", restoreError);
+      }
+    }
 
-    await restoreRoomStatus(booking.roomNumber, booking.roomTypes[0]);
+    await db.delete(params);
 
     return sendResponse(200, { message: "Booking cancelled successfully" });
   } catch (error) {
