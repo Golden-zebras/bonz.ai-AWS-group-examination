@@ -52,6 +52,16 @@ exports.handler = async (event) => {
       return sendError(500, "Could not restore the original room status");
     }
 
+    const deleteParams = {
+      TableName: "hotel-bookings",
+      Key: {
+        bookingId: bookingId,
+        checkInDate: existingBooking.checkInDate,
+      },
+    };
+
+    await db.delete(deleteParams);
+
     let availableRooms;
     try {
       availableRooms = await getAvailableRooms(roomTypes, numberOfGuests, checkInDate, checkOutDate);
