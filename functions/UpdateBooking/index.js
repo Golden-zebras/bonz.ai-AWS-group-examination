@@ -1,10 +1,14 @@
 const { db } = require("../../services/dynamodb");
 const { sendResponse, sendError } = require("../Responses");
-const { validateUpdateBookingRequest } = require("../../helpers/validateUpdateBookingRequest");
+const {
+  validateBookingRequest,
+} = require("../../helpers/validateBookingRequest");
 const { getAvailableRooms } = require("../../helpers/roomCapacity");
 const { assignBookingToRoom } = require("../../helpers/assignBookingToRoom");
 const { restoreRoomStatus } = require("../../helpers/restoreRoomStatus");
-const { calculatePricePerNight } = require("../../helpers/calculatePricePerNight");
+const {
+  calculatePricePerNight,
+} = require("../../helpers/calculatePricePerNight");
 
 exports.handler = async (event) => {
   if (!event.pathParameters || !event.pathParameters.id) {
@@ -18,12 +22,13 @@ exports.handler = async (event) => {
   try {
     const bookingId = event.pathParameters.id;
     const bookingData = JSON.parse(event.body);
-    const { numberOfGuests, roomTypes, checkInDate, checkOutDate } = bookingData;
-
-    const validation = validateUpdateBookingRequest(bookingData);
-    if (!validation.valid) {
-      return sendError(400, validation.message);
+    const validationResult = validateBookingRequest(bookingData, true);
+    if (!validationResult.valid) {
+      return sendError(400, validationResult.message);
     }
+
+    const { numberOfGuests, roomTypes, checkInDate, checkOutDate } =
+      bookingData;
 
     const scanParams = {
       TableName: "hotel-bookings",
@@ -44,7 +49,9 @@ exports.handler = async (event) => {
 
     const checkIn = new Date(checkInDate);
     const checkOut = new Date(checkOutDate);
-    const numberOfNights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+    const numberOfNights = Math.ceil(
+      (checkOut - checkIn) / (1000 * 60 * 60 * 24)
+    );
 
     try {
       await restoreRoomStatus(originalRoomId, originalRoomType);
@@ -54,39 +61,62 @@ exports.handler = async (event) => {
 
     let availableRooms;
     try {
-      availableRooms = await getAvailableRooms(roomTypes, numberOfGuests, checkInDate, checkOutDate);
+      availableRooms = await getAvailableRooms(
+        roomTypes,
+        numberOfGuests,
+        checkInDate,
+        checkOutDate
+      );
     } catch (error) {
-      return sendError(404, error.message); 
+      return sendError(404, error.message);
     }
 
     const firstAvailableRoom = availableRooms[0];
-    
-    await assignBookingToRoom(firstAvailableRoom, bookingId, existingBooking.guestName); 
 
-    const totalPrice = calculatePricePerNight(firstAvailableRoom.roomType, numberOfNights);
+    await assignBookingToRoom(
+      firstAvailableRoom,
+      bookingId,
+      existingBooking.guestName
+    );
 
-    const newBookingParams = {
-      TableName: "hotel-bookings",
-      Item: {
-        bookingId: bookingId,
-        checkInDate: checkIn.toISOString(),
-        checkOutDate: checkOut.toISOString(),
-        numberOfGuests: numberOfGuests,
-        roomTypes: roomTypes,
-        guestName: existingBooking.guestName,
-        email: existingBooking.guestEmail,
-        roomNumber: firstAvailableRoom.roomId, 
-        totalPrice: totalPrice 
-      },
+    const totalPrice = calculatePricePerNight(
+      firstAvailableRoom.roomType,
+      numberOfNights
+    );
+
+    const newBookingItem = {
+      bookingId: bookingId,
+      checkInDate: checkIn.toISOString().split("T")[0],
+      checkOutDate: checkOut.toISOString().split("T")[0],
+      numberOfGuests: numberOfGuests,
+      roomTypes: roomTypes,
+      guestName: existingBooking.guestName,
+      guestEmail: existingBooking.guestEmail,
+      roomNumber: firstAvailableRoom.roomId,
+      totalPrice: totalPrice,
+      createdAt: existingBooking.createdAt,
+      updatedAt: new Date().toISOString(),
+      status: "Updated",
     };
 
-    await db.put(newBookingParams);
+    // Put the new item
+    await db.put({
+      TableName: "hotel-bookings",
+      Item: newBookingItem,
+    });
+
+    // Delete the old item
+    await db.delete({
+      TableName: "hotel-bookings",
+      Key: {
+        bookingId: bookingId,
+        checkInDate: existingBooking.checkInDate,
+      },
+    });
 
     return sendResponse(200, {
       message: "Booking updated successfully",
-      updatedBooking: newBookingParams.Item,
-      roomNumber: firstAvailableRoom.roomId, 
-      totalPrice: totalPrice 
+      updatedBooking: newBookingItem,
     });
   } catch (error) {
     console.error("Error updating booking:", error);
