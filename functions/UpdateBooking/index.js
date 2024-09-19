@@ -27,7 +27,7 @@ exports.handler = async (event) => {
       return sendError(400, validationResult.message);
     }
 
-    const { numberOfGuests, roomTypes, checkInDate, checkOutDate } =
+    const { numberOfGuests, roomRequests, checkInDate, checkOutDate } =
       bookingData;
 
     const scanParams = {
@@ -44,8 +44,11 @@ exports.handler = async (event) => {
     }
 
     const existingBooking = scanResult.Items[0];
-    const originalRoomId = existingBooking.roomNumber;
-    const originalRoomType = existingBooking.roomTypes[0];
+
+    // Handle multiple rooms
+    for (const assignedRoom of existingBooking.assignedRooms) {
+      await restoreRoomStatus(assignedRoom.roomNumber, assignedRoom.roomType);
+    }
 
     const checkIn = new Date(checkInDate);
     const checkOut = new Date(checkOutDate);
@@ -53,80 +56,53 @@ exports.handler = async (event) => {
       (checkOut - checkIn) / (1000 * 60 * 60 * 24)
     );
 
-    try {
-      await restoreRoomStatus(originalRoomId, originalRoomType);
-    } catch (error) {
-      return sendError(500, "Could not restore the original room status");
-    }
-
-    const deleteParams = {
-      TableName: "hotel-bookings",
-      Key: {
-        bookingId: bookingId,
-        checkInDate: existingBooking.checkInDate,
-      },
-    };
-
-    await db.delete(deleteParams);
-
     let availableRooms;
     try {
-      availableRooms = await getAvailableRooms(
-        roomTypes,
-        numberOfGuests,
-        checkInDate,
-        checkOutDate
-      );
+      availableRooms = await getAvailableRooms(roomRequests, numberOfGuests);
     } catch (error) {
       return sendError(404, error.message);
     }
 
-    const firstAvailableRoom = availableRooms[0];
+    let totalPrice = 0;
+    const assignedRooms = [];
 
-    await assignBookingToRoom(
-      firstAvailableRoom,
-      bookingId,
-      existingBooking.guestName
-    );
+    for (const room of availableRooms) {
+      await assignBookingToRoom(room, bookingId, existingBooking.guestName);
+      assignedRooms.push({
+        roomNumber: room.roomId,
+        roomType: room.roomType,
+      });
+      totalPrice += calculatePricePerNight(room.roomType, numberOfNights);
+    }
 
-    const totalPrice = calculatePricePerNight(
-      firstAvailableRoom.roomType,
-      numberOfNights
-    );
-
-    const newBookingItem = {
-      bookingId: bookingId,
-      checkInDate: checkIn.toISOString().split("T")[0],
-      checkOutDate: checkOut.toISOString().split("T")[0],
-      numberOfGuests: numberOfGuests,
-      roomTypes: roomTypes,
-      guestName: existingBooking.guestName,
-      guestEmail: existingBooking.guestEmail,
-      roomNumber: firstAvailableRoom.roomId,
-      totalPrice: totalPrice,
-      createdAt: existingBooking.createdAt,
-      updatedAt: new Date().toISOString(),
-      status: "Updated",
-    };
-
-    // Put the new item
-    await db.put({
-      TableName: "hotel-bookings",
-      Item: newBookingItem,
-    });
-
-    // Delete the old item
-    await db.delete({
+    const updateParams = {
       TableName: "hotel-bookings",
       Key: {
         bookingId: bookingId,
         checkInDate: existingBooking.checkInDate,
       },
-    });
+      UpdateExpression:
+        "SET checkOutDate = :checkOutDate, numberOfGuests = :numberOfGuests, roomRequests = :roomRequests, assignedRooms = :assignedRooms, totalPrice = :totalPrice, updatedAt = :updatedAt, #status = :status",
+      ExpressionAttributeNames: {
+        "#status": "status",
+      },
+      ExpressionAttributeValues: {
+        ":checkOutDate": checkOut.toISOString().split("T")[0],
+        ":numberOfGuests": numberOfGuests,
+        ":roomRequests": roomRequests,
+        ":assignedRooms": assignedRooms,
+        ":totalPrice": totalPrice,
+        ":updatedAt": new Date().toISOString(),
+        ":status": "Updated",
+      },
+      ReturnValues: "ALL_NEW",
+    };
+
+    const result = await db.update(updateParams);
 
     return sendResponse(200, {
       message: "Booking updated successfully",
-      updatedBooking: newBookingItem,
+      updatedBooking: result.Attributes,
     });
   } catch (error) {
     console.error("Error updating booking:", error);
