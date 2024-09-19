@@ -51,8 +51,8 @@ exports.handler = async (event) => {
 
       const booking = {
         bookingId,
-        checkInDate,
-        checkOutDate,
+        checkInDate: checkIn.toISOString().split("T")[0],
+        checkOutDate: checkOut.toISOString().split("T")[0],
         numberOfGuests,
         roomTypes,
         guestName,
@@ -62,7 +62,7 @@ exports.handler = async (event) => {
         createdAt: new Date().toISOString(),
       };
 
-      await assignBookingToRoom(firstAvailableRoom, bookingId, guestName)
+      await assignBookingToRoom(firstAvailableRoom, bookingId, guestName);
 
       await db.put({
         TableName: "hotel-bookings",
