@@ -24,7 +24,7 @@ exports.handler = async (event) => {
 
     const {
       numberOfGuests,
-      roomTypes,
+      roomRequests,  // Cambiato da roomTypes a roomRequests
       checkInDate,
       checkOutDate,
       guestName,
@@ -38,32 +38,54 @@ exports.handler = async (event) => {
     );
 
     try {
-      const matchedRooms = await getAvailableRooms(roomTypes, numberOfGuests);
-      const firstAvailableRoom = matchedRooms[0];
-      console.log("First available room:", firstAvailableRoom);
+      let totalPrice = 0;
+      const assignedRooms = [];
 
+      // Loop per processare ogni richiesta di stanza
+      for (const roomRequest of roomRequests) {
+        const { roomType, quantity } = roomRequest;
+
+        // Ottenere stanze disponibili in base al tipo di stanza e alla quantità
+        const availableRooms = await getAvailableRooms([roomType], quantity); // Passa roomType come array
+
+        // Verifica che ci siano stanze sufficienti
+        if (availableRooms.length < quantity) {
+          return sendError(400, `Not enough available rooms of type ${roomType}`);
+        }
+
+        // Assegna stanze e calcola il prezzo
+        for (let i = 0; i < quantity; i++) {
+          const room = availableRooms[i];
+          const bookingId = nanoid(10);
+
+          await assignBookingToRoom(room, bookingId, guestName);
+
+          assignedRooms.push({
+            roomNumber: room.roomId,
+            roomType: room.roomType,
+          });
+
+          // Aggiungi il prezzo della stanza al prezzo totale
+          totalPrice += calculatePricePerNight(room.roomType, numberOfNights);
+        }
+      }
+
+      // Creare l'oggetto di prenotazione
       const bookingId = nanoid(10);
-
-      let totalPrice = calculatePricePerNight(
-        firstAvailableRoom.roomType,
-        numberOfNights
-      );
-
       const booking = {
         bookingId,
         checkInDate: checkIn.toISOString().split("T")[0],
         checkOutDate: checkOut.toISOString().split("T")[0],
         numberOfGuests,
-        roomTypes,
+        roomRequests,
         guestName,
         guestEmail,
         totalPrice,
-        roomNumber: firstAvailableRoom.roomId,
+        assignedRooms,  // Lista delle stanze assegnate
         createdAt: new Date().toISOString(),
       };
 
-      await assignBookingToRoom(firstAvailableRoom, bookingId, guestName);
-
+      // Inserisci la prenotazione nel database
       await db.put({
         TableName: "hotel-bookings",
         Item: booking,

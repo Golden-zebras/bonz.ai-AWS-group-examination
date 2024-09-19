@@ -10,7 +10,10 @@ const getAvailableRooms = async (roomTypes, numberOfGuests) => {
   let availableRooms = [];
 
   for (const roomType of roomTypes) {
-    const availableRoom = await checkRoomAvailability(roomType);
+    // Count how many rooms of this type are requested
+    const requestedQuantity = roomTypes.filter(type => type === roomType).length;
+
+    const availableRoom = await checkRoomAvailability(roomType, requestedQuantity);
     availableRooms.push(...availableRoom);
   }
 

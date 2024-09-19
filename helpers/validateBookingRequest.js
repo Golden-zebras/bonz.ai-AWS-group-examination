@@ -5,7 +5,7 @@ function validateBookingRequest(bookingData, isUpdate = false) {
     checkInDate,
     checkOutDate,
     numberOfGuests,
-    roomTypes,
+    roomRequests,  // Cambiato da roomTypes a roomRequests
   } = bookingData;
 
   if (!isUpdate) {
@@ -60,11 +60,21 @@ function validateBookingRequest(bookingData, isUpdate = false) {
     return { valid: false, message: "Number of guests must be at least 1" };
   }
 
-  if (
-    isUpdate &&
-    (!roomTypes || !Array.isArray(roomTypes) || roomTypes.length === 0)
-  ) {
-    return { valid: false, message: "At least one room type must be selected" };
+  // Validazione roomRequests (array di richieste di stanze)
+  if (!roomRequests || !Array.isArray(roomRequests) || roomRequests.length === 0) {
+    return { valid: false, message: "At least one room request must be provided" };
+  }
+
+  for (const request of roomRequests) {
+    const { roomType, quantity } = request;
+
+    if (!roomType || typeof roomType !== "string" || roomType.trim() === "") {
+      return { valid: false, message: "Room type is required and cannot be empty" };
+    }
+
+    if (!quantity || typeof quantity !== "number" || quantity < 1) {
+      return { valid: false, message: `Quantity for room type ${roomType} must be at least 1` };
+    }
   }
 
   return { valid: true, message: "Booking request is valid" };
