@@ -9,9 +9,7 @@ const checkRoomAvailability = async (roomType, requestedQuantity) => {
       ":isAvailable": true,
     },
   });
-  // .promise(); // Uncomment this line if using with AWS SDK promises
-
-  // Check if there are enough available rooms
+  
   const availableRooms = result.Items;
   if (availableRooms.length < requestedQuantity) {
     throw new Error(

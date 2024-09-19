@@ -1,12 +1,8 @@
 const { db } = require("../../services/dynamodb");
 const { sendResponse, sendError } = require("../Responses");
 const { nanoid } = require("nanoid");
-const {
-  calculatePricePerNight,
-} = require("../../helpers/calculatePricePerNight");
-const {
-  validateBookingRequest,
-} = require("../../helpers/validateBookingRequest");
+const { calculatePricePerNight } = require("../../helpers/calculatePricePerNight");
+const { validateBookingRequest } = require("../../helpers/validateBookingRequest");
 const { getAvailableRooms } = require("../../helpers/roomCapacity");
 const { assignBookingToRoom } = require("../../helpers/assignBookingToRoom");
 
@@ -24,7 +20,7 @@ exports.handler = async (event) => {
 
     const {
       numberOfGuests,
-      roomRequests,  // Cambiato da roomTypes a roomRequests
+      roomRequests,
       checkInDate,
       checkOutDate,
       guestName,
@@ -41,36 +37,26 @@ exports.handler = async (event) => {
       let totalPrice = 0;
       const assignedRooms = [];
 
-      // Loop per processare ogni richiesta di stanza
       for (const roomRequest of roomRequests) {
         const { roomType, quantity } = roomRequest;
+        const availableRooms = await getAvailableRooms([roomType], quantity);
 
-        // Ottenere stanze disponibili in base al tipo di stanza e alla quantità
-        const availableRooms = await getAvailableRooms([roomType], quantity); // Passa roomType come array
-
-        // Verifica che ci siano stanze sufficienti
         if (availableRooms.length < quantity) {
           return sendError(400, `Not enough available rooms of type ${roomType}`);
         }
 
-        // Assegna stanze e calcola il prezzo
         for (let i = 0; i < quantity; i++) {
           const room = availableRooms[i];
           const bookingId = nanoid(10);
-
           await assignBookingToRoom(room, bookingId, guestName);
-
           assignedRooms.push({
             roomNumber: room.roomId,
             roomType: room.roomType,
           });
-
-          // Aggiungi il prezzo della stanza al prezzo totale
           totalPrice += calculatePricePerNight(room.roomType, numberOfNights);
         }
       }
 
-      // Creare l'oggetto di prenotazione
       const bookingId = nanoid(10);
       const booking = {
         bookingId,
@@ -81,11 +67,10 @@ exports.handler = async (event) => {
         guestName,
         guestEmail,
         totalPrice,
-        assignedRooms,  // Lista delle stanze assegnate
+        assignedRooms,
         createdAt: new Date().toISOString(),
       };
 
-      // Inserisci la prenotazione nel database
       await db.put({
         TableName: "hotel-bookings",
         Item: booking,

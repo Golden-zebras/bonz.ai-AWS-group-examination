@@ -5,7 +5,7 @@ function validateBookingRequest(bookingData, isUpdate = false) {
     checkInDate,
     checkOutDate,
     numberOfGuests,
-    roomRequests,  // Cambiato da roomTypes a roomRequests
+    roomRequests,  
   } = bookingData;
 
   if (!isUpdate) {
@@ -60,7 +60,7 @@ function validateBookingRequest(bookingData, isUpdate = false) {
     return { valid: false, message: "Number of guests must be at least 1" };
   }
 
-  // Validazione roomRequests (array di richieste di stanze)
+  
   if (!roomRequests || !Array.isArray(roomRequests) || roomRequests.length === 0) {
     return { valid: false, message: "At least one room request must be provided" };
   }
