@@ -22,6 +22,7 @@ module.exports.handler = async () => {
         numberOfGuests: item.numberOfGuests,
         roomType: item.roomTypes,
         bookedBy: item.guestName,
+        rooms: item.assignedRooms,
       };
     });
 
