@@ -1,11 +1,18 @@
-function validateBookingRequest(bookingData, isUpdate = false) {
+const { ROOM_CAPACITIES } = require("../operations/roomCapacity");
+const { getAvailableRooms } = require("../operations/roomCapacity");
+
+function isLowerCase(str) {
+  return str === str.toLowerCase();
+}
+
+async function validateBookingRequest(bookingData, isUpdate = false) {
   const {
     guestName,
     guestEmail,
     checkInDate,
     checkOutDate,
     numberOfGuests,
-    roomRequests,  
+    roomRequests,
   } = bookingData;
 
   if (!isUpdate) {
@@ -13,20 +20,26 @@ function validateBookingRequest(bookingData, isUpdate = false) {
     if (
       !guestName ||
       typeof guestName !== "string" ||
-      guestName.trim() === ""
+      guestName.trim() === "" ||
+      !isLowerCase(guestName)
     ) {
-      return { valid: false, message: "Name is required and cannot be empty" };
+      return {
+        valid: false,
+        message: "Name is required, cannot be empty, and must be lowercase",
+      };
     }
 
     if (
       !guestEmail ||
       typeof guestEmail !== "string" ||
       guestEmail.trim() === "" ||
-      !guestEmail.includes("@")
+      !guestEmail.includes("@") ||
+      !isLowerCase(guestEmail)
     ) {
       return {
         valid: false,
-        message: "Email is required with @ sign and cannot be empty",
+        message:
+          "Email is required with @ sign, cannot be empty, and must be lowercase",
       };
     }
   }
@@ -60,21 +73,67 @@ function validateBookingRequest(bookingData, isUpdate = false) {
     return { valid: false, message: "Number of guests must be at least 1" };
   }
 
-  
-  if (!roomRequests || !Array.isArray(roomRequests) || roomRequests.length === 0) {
-    return { valid: false, message: "At least one room request must be provided" };
+  if (
+    !roomRequests ||
+    !Array.isArray(roomRequests) ||
+    roomRequests.length === 0
+  ) {
+    return {
+      valid: false,
+      message: "At least one room request must be provided",
+    };
+  }
+
+  // Calculate total capacity of requested rooms
+  const totalCapacity = roomRequests.reduce((total, request) => {
+    return total + ROOM_CAPACITIES[request.roomType] * request.quantity;
+  }, 0);
+
+  if (numberOfGuests > totalCapacity) {
+    return {
+      valid: false,
+      message: `The requested rooms can only accommodate ${totalCapacity} guests, but ${numberOfGuests} guests were requested`,
+    };
   }
 
   for (const request of roomRequests) {
     const { roomType, quantity } = request;
 
-    if (!roomType || typeof roomType !== "string" || roomType.trim() === "") {
-      return { valid: false, message: "Room type is required and cannot be empty" };
+    if (
+      !roomType ||
+      typeof roomType !== "string" ||
+      roomType.trim() === "" ||
+      !isLowerCase(roomType)
+    ) {
+      return {
+        valid: false,
+        message:
+          "Room type is required, cannot be empty, and must be lowercase",
+      };
     }
 
     if (!quantity || typeof quantity !== "number" || quantity < 1) {
-      return { valid: false, message: `Quantity for room type ${roomType} must be at least 1` };
+      return {
+        valid: false,
+        message: `Quantity for room type ${roomType} must be at least 1`,
+      };
     }
+  }
+
+  // Check room availability
+  try {
+    const availableRooms = await getAvailableRooms(
+      roomRequests,
+      numberOfGuests
+    );
+    if (availableRooms.length === 0) {
+      return {
+        valid: false,
+        message: "Not enough rooms available to accommodate all guests",
+      };
+    }
+  } catch (error) {
+    return { valid: false, message: error.message };
   }
 
   return { valid: true, message: "Booking request is valid" };
