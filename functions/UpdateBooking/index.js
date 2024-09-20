@@ -2,13 +2,17 @@ const { db } = require("../../services/dynamodb");
 const { sendResponse, sendError } = require("../Responses");
 const {
   validateBookingRequest,
-} = require("../../helpers/validateBookingRequest");
-const { getAvailableRooms } = require("../../helpers/roomCapacity");
-const { assignBookingToRoom } = require("../../helpers/assignBookingToRoom");
-const { restoreRoomStatus } = require("../../helpers/restoreRoomStatus");
+} = require("../../helpers/validators/validateBookingRequest");
+const { getAvailableRooms } = require("../../helpers/operations/roomCapacity");
+const {
+  assignBookingToRoom,
+} = require("../../helpers/operations/assignBookingToRoom");
+const {
+  restoreRoomStatus,
+} = require("../../helpers/operations/restoreRoomStatus");
 const {
   calculatePricePerNight,
-} = require("../../helpers/calculatePricePerNight");
+} = require("../../helpers/utils/calculatePricePerNight");
 
 exports.handler = async (event) => {
   if (!event.pathParameters || !event.pathParameters.id) {

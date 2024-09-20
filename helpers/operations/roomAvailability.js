@@ -1,4 +1,4 @@
-const { db } = require("../services/dynamodb");
+const { db } = require("../../services/dynamodb");
 
 const checkRoomAvailability = async (roomType, requestedQuantity) => {
   const result = await db.scan({
@@ -9,7 +9,7 @@ const checkRoomAvailability = async (roomType, requestedQuantity) => {
       ":isAvailable": true,
     },
   });
-  
+
   const availableRooms = result.Items;
   if (availableRooms.length < requestedQuantity) {
     throw new Error(

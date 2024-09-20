@@ -1,10 +1,16 @@
 const { db } = require("../../services/dynamodb");
 const { sendResponse, sendError } = require("../Responses");
 const { nanoid } = require("nanoid");
-const { calculatePricePerNight } = require("../../helpers/calculatePricePerNight");
-const { validateBookingRequest } = require("../../helpers/validateBookingRequest");
-const { getAvailableRooms } = require("../../helpers/roomCapacity");
-const { assignBookingToRoom } = require("../../helpers/assignBookingToRoom");
+const {
+  calculatePricePerNight,
+} = require("../../helpers/utils/calculatePricePerNight");
+const {
+  validateBookingRequest,
+} = require("../../helpers/validators/validateBookingRequest");
+const { getAvailableRooms } = require("../../helpers/operations/roomCapacity");
+const {
+  assignBookingToRoom,
+} = require("../../helpers/operations/assignBookingToRoom");
 
 exports.handler = async (event) => {
   if (!event.body) {
@@ -37,28 +43,29 @@ exports.handler = async (event) => {
       let totalPrice = 0;
       const assignedRooms = [];
 
-      
-      const availableRooms = await getAvailableRooms(roomRequests, numberOfGuests);
+      const availableRooms = await getAvailableRooms(
+        roomRequests,
+        numberOfGuests
+      );
 
       console.log("Available rooms:", availableRooms);
 
-    
       const bookingId = nanoid(10);
 
-   
       for (const roomRequest of roomRequests) {
         const { roomType, quantity } = roomRequest;
 
-   
-        const roomsOfType = availableRooms.filter(room => room.roomType === roomType);
+        const roomsOfType = availableRooms.filter(
+          (room) => room.roomType === roomType
+        );
 
         for (let i = 0; i < quantity; i++) {
           const room = roomsOfType[i];
-          if (!room) break; 
+          if (!room) break;
 
           console.log(`Assigning room ${room.roomId} to guest ${guestName}`);
 
-          await assignBookingToRoom(room, bookingId, guestName); 
+          await assignBookingToRoom(room, bookingId, guestName);
           assignedRooms.push({
             roomNumber: room.roomId,
             roomType: room.roomType,
@@ -97,4 +104,3 @@ exports.handler = async (event) => {
     return sendError(500, "Could not create booking");
   }
 };
-
