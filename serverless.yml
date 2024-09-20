@@ -1,4 +1,4 @@
-org: danielbudai
+org:
 service: hotel-booking-api
 
 provider:
@@ -6,7 +6,7 @@ provider:
   runtime: nodejs20.x
   region: eu-north-1
   iam:
-    role: arn:aws:iam::195275633434:role/serverless
+    role:
 
 build:
   esbuild:
