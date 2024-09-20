@@ -1,6 +1,10 @@
 const { ROOM_CAPACITIES } = require("../operations/roomCapacity");
 const { getAvailableRooms } = require("../operations/roomCapacity");
 
+function isLowerCase(str) {
+  return str === str.toLowerCase();
+}
+
 async function validateBookingRequest(bookingData, isUpdate = false) {
   const {
     guestName,
@@ -16,20 +20,26 @@ async function validateBookingRequest(bookingData, isUpdate = false) {
     if (
       !guestName ||
       typeof guestName !== "string" ||
-      guestName.trim() === ""
+      guestName.trim() === "" ||
+      !isLowerCase(guestName)
     ) {
-      return { valid: false, message: "Name is required and cannot be empty" };
+      return {
+        valid: false,
+        message: "Name is required, cannot be empty, and must be lowercase",
+      };
     }
 
     if (
       !guestEmail ||
       typeof guestEmail !== "string" ||
       guestEmail.trim() === "" ||
-      !guestEmail.includes("@")
+      !guestEmail.includes("@") ||
+      !isLowerCase(guestEmail)
     ) {
       return {
         valid: false,
-        message: "Email is required with @ sign and cannot be empty",
+        message:
+          "Email is required with @ sign, cannot be empty, and must be lowercase",
       };
     }
   }
@@ -89,10 +99,16 @@ async function validateBookingRequest(bookingData, isUpdate = false) {
   for (const request of roomRequests) {
     const { roomType, quantity } = request;
 
-    if (!roomType || typeof roomType !== "string" || roomType.trim() === "") {
+    if (
+      !roomType ||
+      typeof roomType !== "string" ||
+      roomType.trim() === "" ||
+      !isLowerCase(roomType)
+    ) {
       return {
         valid: false,
-        message: "Room type is required and cannot be empty",
+        message:
+          "Room type is required, cannot be empty, and must be lowercase",
       };
     }
 
