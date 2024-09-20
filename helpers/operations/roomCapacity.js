@@ -1,5 +1,11 @@
 const { checkRoomAvailability } = require("./roomAvailability");
 
+const ROOM_CAPACITIES = {
+  single: 1,
+  double: 2,
+  suite: 3,
+};
+
 const getAvailableRooms = async (roomRequests, numberOfGuests) => {
   let availableRooms = [];
 
@@ -20,4 +26,4 @@ const getAvailableRooms = async (roomRequests, numberOfGuests) => {
   return availableRooms;
 };
 
-module.exports = { getAvailableRooms };
+module.exports = { getAvailableRooms, ROOM_CAPACITIES };

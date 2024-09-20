@@ -26,7 +26,7 @@ exports.handler = async (event) => {
   try {
     const bookingId = event.pathParameters.id;
     const bookingData = JSON.parse(event.body);
-    const validationResult = validateBookingRequest(bookingData, true);
+    const validationResult = await validateBookingRequest(bookingData, true);
     if (!validationResult.valid) {
       return sendError(400, validationResult.message);
     }
