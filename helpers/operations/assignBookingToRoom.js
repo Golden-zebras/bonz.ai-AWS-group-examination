@@ -1,15 +1,15 @@
-const { db } = require("../services/dynamodb");
+const { db } = require("../../services/dynamodb");
 
 const assignBookingToRoom = async (room, bookingId, bookedBy) => {
   try {
-   
     await db.update({
       TableName: "hotel-rooms",
       Key: {
         roomId: room.roomId,
         roomType: room.roomType,
       },
-      UpdateExpression: "SET isAvailable = :false, bookingId = :bookingId, bookedBy = :bookedBy",
+      UpdateExpression:
+        "SET isAvailable = :false, bookingId = :bookingId, bookedBy = :bookedBy",
       ExpressionAttributeValues: {
         ":false": false,
         ":bookingId": bookingId,

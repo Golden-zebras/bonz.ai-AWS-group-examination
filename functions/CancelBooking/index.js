@@ -1,6 +1,8 @@
 const { db } = require("../../services/dynamodb");
 const { sendResponse, sendError } = require("../Responses/index");
-const { restoreRoomStatus } = require("../../helpers/restoreRoomStatus");
+const {
+  restoreRoomStatus,
+} = require("../../helpers/operations/restoreRoomStatus");
 
 exports.handler = async (event) => {
   try {

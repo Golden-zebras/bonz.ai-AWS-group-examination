@@ -1,4 +1,4 @@
-const { db } = require("../services/dynamodb");
+const { db } = require("../../services/dynamodb");
 
 const restoreRoomStatus = async (roomId, roomType) => {
   try {
@@ -8,7 +8,8 @@ const restoreRoomStatus = async (roomId, roomType) => {
         roomId: roomId,
         roomType: roomType,
       },
-      UpdateExpression: "SET isAvailable = :true, bookingId = :null, bookedBy = :null",
+      UpdateExpression:
+        "SET isAvailable = :true, bookingId = :null, bookedBy = :null",
       ExpressionAttributeValues: {
         ":true": true,
         ":null": null,
