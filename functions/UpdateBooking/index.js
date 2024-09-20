@@ -49,7 +49,6 @@ exports.handler = async (event) => {
 
     const existingBooking = scanResult.Items[0];
 
-    // Handle multiple rooms
     for (const assignedRoom of existingBooking.assignedRooms) {
       await restoreRoomStatus(assignedRoom.roomNumber, assignedRoom.roomType);
     }
@@ -69,14 +68,29 @@ exports.handler = async (event) => {
 
     let totalPrice = 0;
     const assignedRooms = [];
+    const assignedRoomIds = new Set();
 
-    for (const room of availableRooms) {
-      await assignBookingToRoom(room, bookingId, existingBooking.guestName);
-      assignedRooms.push({
-        roomNumber: room.roomId,
-        roomType: room.roomType,
-      });
-      totalPrice += calculatePricePerNight(room.roomType, numberOfNights);
+    for (const request of roomRequests) {
+      const { roomType, quantity } = request;
+      const roomsOfType = availableRooms.filter(
+        (room) =>
+          room.roomType === roomType && !assignedRoomIds.has(room.roomId)
+      );
+
+      if (roomsOfType.length < quantity) {
+        return sendError(400, `Not enough ${roomType} rooms available`);
+      }
+
+      for (let i = 0; i < quantity; i++) {
+        const room = roomsOfType[i];
+        await assignBookingToRoom(room, bookingId, existingBooking.guestName);
+        assignedRooms.push({
+          roomNumber: room.roomId,
+          roomType: room.roomType,
+        });
+        assignedRoomIds.add(room.roomId);
+        totalPrice += calculatePricePerNight(room.roomType, numberOfNights);
+      }
     }
 
     const updateParams = {

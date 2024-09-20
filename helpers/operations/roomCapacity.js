@@ -3,10 +3,9 @@ const { checkRoomAvailability } = require("./roomAvailability");
 const getAvailableRooms = async (roomRequests, numberOfGuests) => {
   let availableRooms = [];
 
-  for (const { roomType, quantity } of roomRequests) {
-    const availableRoom = await checkRoomAvailability(roomType, quantity);
-
-    availableRooms.push(...availableRoom);
+  for (const { roomType } of roomRequests) {
+    const availableRoomsOfType = await checkRoomAvailability(roomType);
+    availableRooms.push(...availableRoomsOfType);
   }
 
   const totalCapacity = availableRooms.reduce(
@@ -15,24 +14,10 @@ const getAvailableRooms = async (roomRequests, numberOfGuests) => {
   );
 
   if (totalCapacity < numberOfGuests) {
-    throw new Error("Not enough rooms assigned to accommodate all guests");
+    throw new Error("Not enough rooms available to accommodate all guests");
   }
 
-  const finalAvailableRooms = [];
-
-  for (const { roomType, quantity } of roomRequests) {
-    const roomsOfType = availableRooms.filter(
-      (room) => room.roomType === roomType
-    );
-
-    if (roomsOfType.length < quantity) {
-      throw new Error(`Not enough available rooms of type ${roomType}`);
-    }
-
-    finalAvailableRooms.push(...roomsOfType.slice(0, quantity));
-  }
-
-  return finalAvailableRooms;
+  return availableRooms;
 };
 
 module.exports = { getAvailableRooms };
